@@ -1,0 +1,32 @@
+﻿@inject NavigationManager Navigation
+
+<div class="btn-group d-flex" role="group">
+    <button class="btn btn-secondary w-100" @onclick="NavigateToPrevious">Previous</button>
+    <button class="btn btn-secondary w-100" @onclick="NavigateToIndex">Index</button>
+    <button class="btn btn-secondary w-100" @onclick="NavigateToNext">Next</button>
+</div>
+
+@code {
+    [Parameter]
+    public string? Novel { get; set; }
+    [Parameter]
+    public int ChapterNumber { get; set; }
+    public NovelDetails novelDetails = new NovelDetails();
+
+    protected string GerNovelUrl() => String.Format("/novel/{0}", Novel);
+
+    private void NavigateToPrevious()
+    {
+        Navigation.NavigateTo(String.Format("/novel/{0}/{1}", Novel, ChapterNumber - 1));
+    }
+
+    private void NavigateToIndex()
+    {
+        Navigation.NavigateTo(GerNovelUrl());
+    }
+
+    private void NavigateToNext()
+    {
+        Navigation.NavigateTo(String.Format("/novel/{0}/{1}", Novel, ChapterNumber + 1));
+    }
+}

@@ -16,6 +16,7 @@
     font-size: 1.1rem;
     vertical-align: text-top;
     top: -2px;
+    margin-left: 15px;
 }
 
 .nav-item {
@@ -65,4 +66,8 @@
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
     }
+}
+
+.nav-container {
+    margin-top: -8px;
 }

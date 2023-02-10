@@ -1,0 +1,58 @@
+﻿@page "/novel/{novelindex}"
+
+@inject HttpClient Http
+
+<div class="container-fluid">
+    @if (!IsPageLoaded)
+    {
+        <PageTitle>Loading Novel</PageTitle>
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        @if (!DoesNovelExists)
+        {
+            <PageTitle>Unknown novel</PageTitle>
+            <p><em>Sorry, but novel you're looking for does not exists.</em></p>
+        }
+        else
+        {
+            <PageTitle>@GetNovelTitle()</PageTitle>
+            <div class="container text-center">
+                <div class="page-header">
+                    <h1>@GetNovelTitle()</h1>
+                </div>
+            </div>
+            <div class="list-group">
+            @foreach (var chapter in novelDetails.Chapters)
+            {
+                <a href="@GetChapterUrl(chapter)" class="list-group-item">Chapter @chapter</a>
+            }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? NovelIndex { get; set; }
+
+    public bool DoesNovelExists { get; set; }
+    public bool IsPageLoaded { get; set; }
+
+    public NovelDetails novelDetails = new NovelDetails();
+
+    protected string GetNovelTitle() => novelDetails != null ? novelDetails.Title : "Missing novel title";
+    protected string GetChapterUrl(int chapterindex) => String.Format("/novel/{0}/{1}", NovelIndex, chapterindex);
+
+    protected async Task LoadNovelDetails()
+    {
+        DoesNovelExists = await novelDetails.FetchData(Http, NovelIndex);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadNovelDetails();
+        IsPageLoaded = true;
+    }
+}

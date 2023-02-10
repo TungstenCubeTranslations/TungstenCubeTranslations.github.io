@@ -1,0 +1,108 @@
+﻿@page "/novel/{novelindex}/{chapterindex}"
+
+@inject HttpClient Http
+
+
+<div class="container-fluid">
+
+    @if (!IsPageLoaded)
+    {
+        <PageTitle>Loading Chapter</PageTitle>
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        @if (DoesNovelExists)
+        {
+            <PageTitle>@GetNovelTitle() - @GetChapterTitle()</PageTitle>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item"><a href="@GerNovelUrl()">@GetNovelTitle()</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@GetChapterTitle()</li>
+                </ol>
+            </nav>
+
+            <div class="container text-center">
+                <div class="page-header">
+                    <h1>@GetNovelTitle()</h1>
+                </div>
+                <h3>@GetChapterTitle()</h3>
+            </div>
+
+            <ChapterNav Novel="@NovelIndex" ChapterNumber="@ChapterNumber"/>
+
+            @if (DoesChapterExists && TextLines != null)
+            {
+                for (int i = 0; i < TextLines.Length; i++)
+                {
+                    @TextLines[i]
+                    <br />
+                }
+            }
+            else
+            {
+                <p><em>Sorry, but chapter you're looking for does not exists.</em></p>
+            }
+
+            <ChapterNav Novel="@NovelIndex" ChapterNumber="@ChapterNumber"/>
+        }
+        else
+        {
+            <p><em>Sorry, but novel you're looking for does not exists.</em></p>
+        }
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    public string? NovelIndex { get; set; }
+    [Parameter]
+    public string? ChapterIndex { get; set; }
+
+    public bool IsPageLoaded { get; set; }
+
+    public bool DoesChapterExists { get; set; }
+    public bool DoesNovelExists { get; set; }
+
+    public string[]? TextLines;
+    public int ChapterNumber;
+
+    public NovelDetails novelDetails = new NovelDetails();
+
+
+    protected string GetNovelTitle() => novelDetails.Title;
+
+    //protected string GetChapterTitle() => String.Format("Chapter {0} - {1}", ChapterNumber, "Missing Chapter Title");
+    protected string GetChapterTitle() => String.Format("Chapter {0}", ChapterNumber);
+    protected string GerNovelUrl() => String.Format("/novel/{0}", NovelIndex);
+
+    protected async Task LoadNovelDetails()
+    {
+        DoesNovelExists = await novelDetails.FetchData(Http, NovelIndex);
+    }
+
+    protected async Task LoadChapter()
+    {
+        using HttpResponseMessage response = await Http.GetAsync(String.Format("novels/{0}/chapters/{1}.txt", NovelIndex, ChapterNumber));
+
+        DoesChapterExists = response.IsSuccessStatusCode;
+        if (DoesChapterExists)
+        {
+            var text = await response.Content.ReadAsStringAsync();
+            TextLines = text?.Split('\n');
+        }
+        else
+            TextLines = new string[0];
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!int.TryParse(ChapterIndex, out ChapterNumber))
+            ChapterNumber = 0;
+        await LoadNovelDetails();
+        await LoadChapter();
+        IsPageLoaded = true;
+    }
+}
