@@ -31,20 +31,20 @@
             </div>
 
             <ChapterNav Novel="@NovelIndex" ChapterNumber="@ChapterNumber"/>
-
-            @if (DoesChapterExists && TextLines != null)
-            {
-                for (int i = 0; i < TextLines.Length; i++)
+            <div class="content">
+                @if (DoesChapterExists && TextLines != null)
                 {
-                    @TextLines[i]
-                    <br />
+                    for (int i = 0; i < TextLines.Length; i++)
+                    {
+                        @TextLines[i]
+                        <br />
+                    }
                 }
-            }
-            else
-            {
-                <p><em>Sorry, but chapter you're looking for does not exists.</em></p>
-            }
-
+                else
+                {
+                    <p><em>Sorry, but chapter you're looking for does not exists.</em></p>
+                }
+            </div>
             <ChapterNav Novel="@NovelIndex" ChapterNumber="@ChapterNumber"/>
         }
         else
@@ -52,7 +52,7 @@
             <p><em>Sorry, but novel you're looking for does not exists.</em></p>
         }
     }
-
+    <div class="foot"></div>
 </div>
 
 @code {
@@ -67,6 +67,7 @@
     public bool DoesNovelExists { get; set; }
 
     public string[]? TextLines;
+    public string? ChapterTitle;
     public int ChapterNumber;
 
     public NovelDetails novelDetails = new NovelDetails();
@@ -75,7 +76,7 @@
     protected string GetNovelTitle() => novelDetails.Title;
 
     //protected string GetChapterTitle() => String.Format("Chapter {0} - {1}", ChapterNumber, "Missing Chapter Title");
-    protected string GetChapterTitle() => String.Format("Chapter {0}", ChapterNumber);
+    protected string GetChapterTitle() => Truncate(ChapterTitle ?? String.Format("Chapter {0}", ChapterNumber));
     protected string GerNovelUrl() => String.Format("/novel/{0}", NovelIndex);
 
     protected async Task LoadNovelDetails()
@@ -83,18 +84,32 @@
         DoesNovelExists = await novelDetails.FetchData(Http, NovelIndex);
     }
 
-    protected async Task LoadChapter()
+    protected async Task LoadChapterContent()
     {
-        using HttpResponseMessage response = await Http.GetAsync(String.Format("novels/{0}/chapters/{1}.txt", NovelIndex, ChapterNumber));
+        var text = await LoadChapterFile("content.txt");
+        TextLines = text.Split('\n');
+    }
+
+    protected async Task LoadChapterTitle()
+    {
+        var text = await LoadChapterFile("title.txt");
+        ChapterTitle = text;
+    }
+
+    protected async Task<string> LoadChapterFile(string file)
+    {
+        using HttpResponseMessage response = await Http.GetAsync(String.Format("novels/{0}/translated/chapters/{1}/{2}", NovelIndex, ChapterNumber, file));
 
         DoesChapterExists = response.IsSuccessStatusCode;
         if (DoesChapterExists)
         {
             var text = await response.Content.ReadAsStringAsync();
-            TextLines = text?.Split('\n');
+            return text ?? "";
+            // TextLines = text?.Split('\n');
         }
         else
-            TextLines = new string[0];
+            //TextLines = new string[0];
+            return "";
     }
 
     protected override async Task OnParametersSetAsync()
@@ -102,7 +117,15 @@
         if (!int.TryParse(ChapterIndex, out ChapterNumber))
             ChapterNumber = 0;
         await LoadNovelDetails();
-        await LoadChapter();
+        await LoadChapterContent();
+        await LoadChapterTitle();
         IsPageLoaded = true;
+    }
+
+    private static string Truncate(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        var table = value.Split('\n');
+        return table[0];
     }
 }
