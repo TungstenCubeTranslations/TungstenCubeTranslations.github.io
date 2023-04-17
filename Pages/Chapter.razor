@@ -76,7 +76,7 @@
     protected string GetNovelTitle() => novelDetails.Title;
 
     //protected string GetChapterTitle() => String.Format("Chapter {0} - {1}", ChapterNumber, "Missing Chapter Title");
-    protected string GetChapterTitle() => Truncate(ChapterTitle ?? String.Format("Chapter {0}", ChapterNumber));
+    protected string GetChapterTitle() => ChapterTitle ?? String.Format("Chapter {0}", ChapterNumber);
     protected string GerNovelUrl() => String.Format("/novel/{0}", NovelIndex);
 
     protected async Task LoadNovelDetails()
@@ -87,16 +87,16 @@
     protected async Task LoadChapterContent()
     {
         var text = await LoadChapterFile("content.txt");
-        TextLines = text.Split('\n');
+        TextLines = (text ?? "").Split('\n');
     }
 
     protected async Task LoadChapterTitle()
     {
         var text = await LoadChapterFile("title.txt");
-        ChapterTitle = text;
+        ChapterTitle = Truncate(text ?? String.Format("Chapter {0}", ChapterNumber));
     }
 
-    protected async Task<string> LoadChapterFile(string file)
+    protected async Task<string?> LoadChapterFile(string file)
     {
         using HttpResponseMessage response = await Http.GetAsync(String.Format("novels/{0}/translated/chapters/{1}/{2}", NovelIndex, ChapterNumber, file));
 
@@ -109,7 +109,7 @@
         }
         else
             //TextLines = new string[0];
-            return "";
+            return null;
     }
 
     protected override async Task OnParametersSetAsync()
