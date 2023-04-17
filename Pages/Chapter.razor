@@ -117,8 +117,8 @@
         if (!int.TryParse(ChapterIndex, out ChapterNumber))
             ChapterNumber = 0;
         await LoadNovelDetails();
-        await LoadChapterContent();
         await LoadChapterTitle();
+        await LoadChapterContent();
         IsPageLoaded = true;
     }
 
